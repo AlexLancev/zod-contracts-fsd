@@ -6,45 +6,39 @@ import {
   getUsersQuery,
 } from "../entities/users/api";
 
-// Событие для инициализации приложения
 export const initApp = createEvent();
 
-// Запуск запроса для получения пользователей при инициализации приложения
-sample({
-  clock: initApp,
-  target: getUsersQuery.start,
-});
-
-// Определяем переменные для упрощения доступа
 const usersData = getUsersQuery.$data;
 const startUsersQuery = getUsersQuery.start;
 
-// Обновление списка пользователей при успешном добавлении нового пользователя
 sample({
-  source: usersData, // Хранилище данных пользователей
-  clock: addUserMutation.finished.success, // Успешное добавление пользователя
-  fn: (state, user) => {
-    return state ? [...state, user] : [user]; // Добавляем пользователя
-  },
-  target: startUsersQuery, // Запускаем повторный запрос
+  clock: initApp,
+  target: startUsersQuery,
 });
 
-// Обновление списка пользователей при успешном копировании пользователя
 sample({
   source: usersData,
-  clock: copyUserMutation.finished.success, // Успешное копирование пользователя
+  clock: addUserMutation.finished.success,
   fn: (state, user) => {
-    return state ? [...state, user] : [user]; // Добавляем пользователя
+    return state ? [...state, user] : [user];
   },
   target: startUsersQuery,
 });
 
-// Обновление списка пользователей при успешном удалении пользователя
 sample({
   source: usersData,
-  clock: deleteUserMutation.finished.success, // Успешное удаление пользователя
+  clock: copyUserMutation.finished.success,
+  fn: (state, user) => {
+    return state ? [...state, user] : [user];
+  },
+  target: startUsersQuery,
+});
+
+sample({
+  source: usersData,
+  clock: deleteUserMutation.finished.success,
   fn: (state, { params }) => {
-    return state ? state.filter((user) => user.id !== params) : state; // Фильтруем пользователей
+    return state ? state.filter((user) => user.id !== params) : state;
   },
   target: startUsersQuery,
 });
